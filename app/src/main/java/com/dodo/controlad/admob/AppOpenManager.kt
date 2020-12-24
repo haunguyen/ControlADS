@@ -109,7 +109,9 @@ class AppOpenManager(
                 }
             currentActivity?.apply {
                 showTime++
-                appOpenAd?.show(this, fullScreenContentCallback)
+                if(!this.isFinishing){
+                    appOpenAd?.show(this, fullScreenContentCallback)
+                }
             }
         } else {
             fetchAd(admobIdOpenApp, showOpenAdsAdmobListener)
@@ -153,7 +155,6 @@ class AppOpenManager(
     }
 
     override fun onActivityStopped(activity: Activity) {
-
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
