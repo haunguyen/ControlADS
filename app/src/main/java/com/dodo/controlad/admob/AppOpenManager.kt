@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.AdError
@@ -26,6 +28,8 @@ class AppOpenManager(
     private var loadTime: Long = 0
     lateinit var fullScreenContentCallback: FullScreenContentCallback
     private var showTime = 0
+    var mActivities = HashMap<String, Activity>()
+    var localClassName: String? = ""
 
     init {
         this.myApplication.registerActivityLifecycleCallbacks(this)
@@ -34,8 +38,10 @@ class AppOpenManager(
 
     fun fetchAdFirstTime(
         admobIdOpenApp: String,
+        localClassName: String?,
         showOpenAdsAdmobListener: ShowOpenAdsAdmobListener
-    ){
+    ) {
+        this.localClassName = localClassName
         resetFetchTime()
         fetchAd(admobIdOpenApp, showOpenAdsAdmobListener)
     }
@@ -45,7 +51,7 @@ class AppOpenManager(
         admobIdOpenApp: String,
         showOpenAdsAdmobListener: ShowOpenAdsAdmobListener
     ) {
-        Log.e("Control Ads ","fetchAd Open App$showTime")
+        Log.e("Control Ads ", "fetchAd Open App$showTime")
         showTime++
         if (isAdAvailable()) {
             return
@@ -107,11 +113,9 @@ class AppOpenManager(
                         isShowingAd = true
                     }
                 }
-            currentActivity?.apply {
+            getCurrentActivityVisible()?.apply {
                 showTime++
-                if(!this.isFinishing){
-                    appOpenAd?.show(this, fullScreenContentCallback)
-                }
+                appOpenAd?.show(this, fullScreenContentCallback)
             }
         } else {
             fetchAd(admobIdOpenApp, showOpenAdsAdmobListener)
@@ -138,30 +142,57 @@ class AppOpenManager(
     }
 
     // implement Application.ActivityLifecycleCallbacks
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-
+    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
+        Log.e("Control Ads ", "onActivityCreated" + activity.localClassName)
+        if (!mActivities.containsKey(activity.localClassName)) {
+            mActivities[activity.localClassName] = activity
+        }
     }
 
     override fun onActivityStarted(activity: Activity) {
-        currentActivity = activity
+        if (!mActivities.containsKey(activity.localClassName)) {
+            mActivities[activity.localClassName] = activity
+        }
+        Log.e("Control Ads ", "onActivityStarted" + activity.localClassName)
     }
 
     override fun onActivityResumed(activity: Activity) {
-        currentActivity = activity
+        Log.e("Control Ads ", "onActivityResumed" + activity.localClassName)
     }
 
     override fun onActivityPaused(activity: Activity) {
-
+        Log.e("Control Ads ", "onActivityPaused" + activity.localClassName)
     }
 
     override fun onActivityStopped(activity: Activity) {
+        Log.e("Control Ads ", "onActivityStopped " + activity.localClassName)
+        mActivities.remove(activity.localClassName)
     }
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-
-    }
+    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {}
 
     override fun onActivityDestroyed(activity: Activity) {
+    }
 
+    private fun getCurrentActivityVisible(): Activity? {
+        if (mActivities.size > 0) {
+            for (key in mActivities.keys) {
+                mActivities[key]?.let {
+                    if (it is AppCompatActivity) {
+                        if ((it as AppCompatActivity?)!!.lifecycle.currentState.isAtLeast(
+                                Lifecycle.State.RESUMED
+                            )
+                            && key == localClassName
+                        ) {
+                            return it
+                        }
+                    } else if (key == localClassName && !it.isFinishing) {
+                        return it
+                    }
+                }
+
+            }
+        }
+        return null
     }
 }
