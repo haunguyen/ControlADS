@@ -52,6 +52,7 @@ object InterstitialAdAdmob {
                     }
 
                 }
+                dialog.dismiss()
                 mInterstitialAds.show()
             }else{
                 dialog.dismiss()
