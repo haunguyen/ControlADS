@@ -40,8 +40,8 @@ object InterstitialAdAdmob {
                 mInterstitialAds.adListener = object : AdListener() {
                     override fun onAdFailedToLoad(p0: LoadAdError?) {
                         super.onAdFailedToLoad(p0)
-                        showInterstitialAdsAdmobListener.onLoadFailInterstitialAdsAdmob()
                         dialog.dismiss()
+                        showInterstitialAdsAdmobListener.onLoadFailInterstitialAdsAdmob()
                     }
 
                     override fun onAdClosed() {
@@ -54,6 +54,7 @@ object InterstitialAdAdmob {
                 }
                 mInterstitialAds.show()
             }else{
+                dialog.dismiss()
                 showInterstitialAdsAdmobListener.onLoadFailInterstitialAdsAdmob()
             }
         },600)
